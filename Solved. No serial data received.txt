@@ -1,0 +1,13 @@
+I had the same problem and solved it as follows. At first the esp32-s3 worked correctly. However, after uploading one of my sketches it gave me this error and I could not upload another sketch because of this. To fix it I did the following.
+
+Create an empty sketch with a debug line in the loop. Something like Serial.println("debug line");. I tried to upload this code and connect via SERIAL to see if it was uploaded correctly.
+Upload the code directly from esptool.py. As I program it from the arduino ide, the easiest way is to activate the upload debug in the ide. File > preferences> "Show detailed output while" > "Upload".
+Upload the sketch from the debug line. It will generate the error "A fatal error occurred: Unable to verify flash chip connection (No serial data received.)." But at the top of the arduino IDE console the executed esptool.py command will appear. Something like this:
+Las variables Globales usan 48428 bytes (14%) de la memoria dinámica, dejando 279252 bytes para las variables locales. El máximo es 327680 bytes. C:\Users\user\AppData\Local\Arduino15\packages\esp32\tools\esptool_py\4.5.1/esptool.exe --chip esp32s3 --port COM3 --baud 115200 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 8MB 0x0 C:\Users\user\AppData\Local\Temp\arduino_build_393730/MySketch.ino.bootloader.bin 0x8000 C:\Users\user\AppData\Local\Temp\arduino_build_393730/MySketch.ino.partitions.bin 0xe000 C:\Users\user\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.9/tools/partitions/boot_app0.bin 0x10000 C:\Users\user\AppData\Local\Temp\arduino_build_393730/MySketch.ino.bin  esptool.py v4.5.1 Serial port COM3 
+Copy the command and run it, adding the --no-stub parameter at the begining. This will allow to upload the new sketch. With this you can upload sketches from the arduino IDE again. In my case was:
+C:\Users\user\AppData\Local\Arduino15\packages\esp32\tools\esptool_py\4.5.1/esptool.exe --no-stub --chip esp32s3 --port COM3 --baud 115200 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 8MB 0x0 C:\Users\user\AppData\Local\Temp\arduino_build_393730/MySketch.ino.bootloader.bin 0x8000 C:\Users\user\AppData\Local\Temp\arduino_build_393730/MySketch.ino.partitions.bin 0xe000 C:\Users\user\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.9/tools/partitions/boot_app0.bin 0x10000 C:\Users\user\AppData\Local\Temp\arduino_build_393730/MySketch.ino.bin  
+Fix the bug that caused this error. In my case it was due to a "delete buffer" that I did not place correctly.
+In addition to this error I got the following errors:
+
+Core dump flash config is corrupted!
+A fatal error occurred: No serial data received.

@@ -16,7 +16,7 @@ extern "C" int ieee80211_raw_frame_sanity_check(int32_t arg, int32_t arg2, int32
       return 0;
 }
 
-void PacketSender::checkIfBypassed(){
+bool PacketSender::checkIfBypassed(){
     if (ieee80211_raw_frame_sanity_check(31337, 0, 0) == 1)
         return true;
     else

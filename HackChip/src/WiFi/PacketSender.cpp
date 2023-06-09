@@ -1,14 +1,27 @@
 #include "PacketSender.h"
 
 esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
+void wsl_bypasser_send_raw_frame(const uint8_t *frame_buffer, int32_t size);
 
-// BYPASS DE QUE NO SE PUEDEN ENVIAR DEAUTH
+/*// BYPASS DE QUE NO SE PUEDEN ENVIAR DEAUTH
 //https://www.reddit.com/r/WillStunForFood/comments/ot8vzl/finally_got_the_esp32_to_send_deauthentication/
 //https://github.com/justcallmekoko/ESP32Marauder/wiki/arduino-ide-setup#if-you-are-following-these-instructions-you-do-not-need-to-do-this
 int ieee80211_raw_frame_sanity_check(int32_t arg, int32_t arg2, int32_t arg3){
     return 0;
+}*/
+extern "C" int ieee80211_raw_frame_sanity_check(int32_t arg, int32_t arg2, int32_t arg3){
+    if (arg == 31337)
+      return 1;
+    else
+      return 0;
 }
 
+void PacketSender::checkIfBypassed(){
+    if (ieee80211_raw_frame_sanity_check(31337, 0, 0) == 1)
+        return true;
+    else
+        return false;
+}
 
 void PacketSender::deauth_bypassed(const MacAddr ap, const MacAddr station, const MacAddr bssid, uint8_t reason, uint8_t channel) {
     
@@ -130,7 +143,13 @@ esp_err_t PacketSender::raw(const uint8_t* packet, int32_t len, bool en_sys_seq,
     }
 }
 
-void PacketSender::wsl_bypasser_send_raw_frame(const uint8_t *frame_buffer, int size){
+void wsl_bypasser_send_raw_frame(const uint8_t *frame_buffer, int32_t size){
+    for(unsigned int i = 0; i < size; i++){
+        if(frame_buffer[i] < 16){
+        Serial.print("0");
+        }
+        Serial.print(frame_buffer[i], HEX);
+    }
     ESP_ERROR_CHECK(esp_wifi_80211_tx(WIFI_IF_AP, frame_buffer, size, false));
 }
 

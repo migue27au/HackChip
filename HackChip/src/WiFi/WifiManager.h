@@ -48,6 +48,14 @@
 #define DEFAULT_AP_HIDDEN false
 #define DEFAULT_AP_MAX_CONNECTIONS 4
 
+// BYPASS DE QUE NO SE PUEDEN ENVIAR DEAUTH
+//https://www.reddit.com/r/WillStunForFood/comments/ot8vzl/finally_got_the_esp32_to_send_deauthentication/
+//https://github.com/justcallmekoko/ESP32Marauder/wiki/arduino-ide-setup#if-you-are-following-these-instructions-you-do-not-need-to-do-this
+/*
+int ieee80211_raw_frame_sanity_check(int32_t arg, int32_t arg2, int32_t arg3){
+    return 0;
+}
+*/
 
 class WifiManager{
 public:
@@ -69,6 +77,7 @@ public:
 	//list SSID
 	int countSSID();
 	int listSSIDs(String *json_SSID);
+	String getBSSIDfromJSON(String *json_str, unsigned int position);
 
 
 	//Beacon Spam Attack

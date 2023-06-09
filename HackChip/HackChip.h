@@ -1,6 +1,11 @@
 #ifndef HACKCHIP_H
 #define HACKCHIP_H
 
+/*Arudino libraries*/
+#include "TFT_eSPI.h"
+#include <ArduinoJson.h>
+
+/*My libraries*/
 #include "src/WiFi/PacketSender.h"
 #include "src/WiFi/SnifferBuffer.h"
 #include "src/WiFi/WifiManager.h"

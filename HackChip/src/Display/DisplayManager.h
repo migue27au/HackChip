@@ -103,6 +103,7 @@ public:
 
 	void hello();
 	void fillSSIDs(String json_str, uint8_t row_selector = 0);
+	void fillBSSIDs(String json_str, uint8_t row_selector = 0);
 private:
 	TFT_eSPI *display_tft;
 

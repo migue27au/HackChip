@@ -109,6 +109,8 @@ const uint8_t probePacket[] = {
 
 class PacketSender {
     public:
+        bool checkIfBypassed();
+
         esp_err_t deauth(const MacAddr ap, const MacAddr station, const MacAddr bssid, uint8_t reason, uint8_t channel);
         void deauth_bypassed(const MacAddr ap, const MacAddr station, const MacAddr bssid, uint8_t reason, uint8_t channel);
         
@@ -118,7 +120,7 @@ class PacketSender {
         esp_err_t probe(const MacAddr mac, const char* ssid, uint8_t channel);
         
         esp_err_t raw(const uint8_t* packet, int32_t len, bool en_sys_seq = false, bool interface_ap = true);
-        void wsl_bypasser_send_raw_frame(const uint8_t *frame_buffer, int size);
+        //void wsl_bypasser_send_raw_frame(const uint8_t *frame_buffer, int size);
     private:
         //esp_err_t change_channel(uint8_t channel);
         uint16_t seqnum;

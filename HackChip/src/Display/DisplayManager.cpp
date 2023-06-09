@@ -240,7 +240,47 @@ void DisplayManager::fillSSIDs(String json_str, uint8_t row_selector){
 
 
 	for(uint8_t row = row_init; row < row_last; row++){
-		for(uint8_t col = 0; col < doc[row]["r"].size(); col++){
+		//empiezo en 1 porque el cero es el mac del ap
+		for(uint8_t col = 1; col < doc[row]["r"].size(); col++){
+			String string_to_display = doc[row]["r"][col]["s"];
+			int color_to_display = doc[row]["r"][col]["c"];
+			
+			display_tft->setTextColor(color_to_display);
+			display_tft->drawString(string_to_display, 
+									col_offset[col],
+									ROW_ELEMENT_Y_OFFSET + static_cast<uint16_t>(LETTER_HEIGHT)*(row%(ROW_CELLS_SHOWED/cursor_size)));
+		}
+	}
+
+	json_str = "";
+	doc = NULL;
+}
+
+void DisplayManager::fillBSSIDs(String json_str, uint8_t row_selector){
+	StaticJsonDocument<4096> doc;
+	
+	DeserializationError error = deserializeJson(doc, json_str);
+	cursor_size = 1;
+
+	uint8_t row_init = ((row_selector-1)/(ROW_CELLS_SHOWED/cursor_size))*(ROW_CELLS_SHOWED/cursor_size);
+	uint8_t row_last = row_init+(ROW_CELLS_SHOWED/cursor_size);
+
+	if(row_last > doc.size()){
+		row_last = doc.size();
+	}
+
+	display_tft->setTextSize(cursor_size);
+	display_tft->setTextDatum(ROW_ELEMENT_ALIGN);
+	//clear
+	display_tft->fillRect(ROW_ELEMENT_X, ROW_ELEMENT_Y_OFFSET-(LETTER_HEIGHT/2), PIXELS_HORIZONTAL-ROW_ELEMENT_X,PIXELS_VERTICAL-ROW_ELEMENT_Y_OFFSET, COLOR_BACKGROUND);
+
+	//						ssid 			security							strength signal
+	uint16_t col_offset[] = {ROW_ELEMENT_X, ROW_ELEMENT_X+HEADER_CELL_WIDTH*2, ROW_ELEMENT_X+HEADER_CELL_WIDTH*5};
+
+
+	for(uint8_t row = row_init; row < row_last; row++){
+		//empiezo en 1 porque el cero es el mac del ap
+		for(uint8_t col = 0; col < 2; col++){
 			String string_to_display = doc[row]["r"][col]["s"];
 			int color_to_display = doc[row]["r"][col]["c"];
 			

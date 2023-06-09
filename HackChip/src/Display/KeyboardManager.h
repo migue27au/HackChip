@@ -11,6 +11,10 @@
 
 #define KEYBOARD_COLS 13
 #define KEYBOARD_ROWS 5
+
+#define NUMERIC_KEYBOARD_COLS 6
+#define NUMERIC_KEYBOARD_ROWS 4
+
 #define KEYBOARD_STRING_MAX_LENGTH 24
 
 #define KEYBOARD_LETTER_TOP_PADDING 20
@@ -43,15 +47,22 @@ public:
   KeyboardManager(TFT_eSPI *display);
   ~KeyboardManager();
 
+  void reset();
+
   void init();
 	bool isSpecialLetter(uint8_t col, uint8_t row);
 	void printKeyboard();
 	void updateLetter(uint8_t col, uint8_t row, bool selected);
 	void updateSpecialLetter(uint8_t col, uint8_t row, bool is_pressed);
 	void printTextArea();
+	
 
   void setLabel(String new_label);
 	String displayKeyboard();
+
+	String displayNumericKeyboard(bool mac_format = false);
+	void printNumericKeyboard();
+	void initNumeric();
 private:
   TFT_eSPI *display_tft;
 

@@ -160,7 +160,16 @@ int WifiManager::listSSIDs(String *json_SSID) {
 					break;
 			}
 			
+			String mac = "";
+			for (int i = 0; i < 6; i++) {
+				mac += String(mac[i], HEX);
+				if (i < 5) {
+					mac += ":";
+				}
+			}
+
 			*json_SSID += "{\"r\":[";
+			*json_SSID += "{\"s\":\"" + String(WiFi.BSSIDstr(i)) + "\",\"c\":\"" + TFT_WHITE + "\"},";
 			*json_SSID += "{\"s\":\"" + String(WiFi.SSID(i)) + "\",\"c\":\"" + TFT_WHITE + "\"},";
 			*json_SSID += "{\"s\":\"" + wifi_security + "\",\"c\":\"" + TFT_WHITE + "\"},";
 			*json_SSID += "{\"s\":\"" + String(WiFi.RSSI(i)) + "\",\"c\":\"" + signal_strength_color + "\"}";
@@ -173,6 +182,18 @@ int WifiManager::listSSIDs(String *json_SSID) {
 	*json_SSID = json_SSID->substring(0,json_SSID->length()-1);
 	*json_SSID += "]";
 	return n;
+}
+
+String WifiManager::getBSSIDfromJSON(String *json_str, unsigned int position){
+	StaticJsonDocument<4096> doc;
+	DeserializationError error = deserializeJson(doc, *json_str);
+	String rtr = "";
+	if(position < doc.size()){
+		rtr = doc[position]["r"][0]["s"].as<String>();
+	}
+
+	doc = NULL;
+	return rtr;
 }
 
 void WifiManager::beaconFlood(String target_ssid, unsigned int time_of_attack) {

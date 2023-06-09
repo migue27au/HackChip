@@ -1,7 +1,4 @@
-#include "TFT_eSPI.h"
-
 #include "HackChip.h"
-
 
 #define CS_SD 10
 
@@ -124,7 +121,8 @@ void loop() {
 #define MENU_1      100   //SETTINGS
 #define MENU_1_1    110   //  DISPLAY
 #define MENU_1_1_1  111   //    SHOW KEYBOARD
-#define MENU_1_1_2  112   //    FILL NUMBERS
+#define MENU_1_1_2  112   //    SHOW NUMERIC KEYBOARD
+#define MENU_1_1_3  113   //    FILL NUMBERS
 
 #define MENU_2      200   //WIFI
 #define MENU_2_1    210   //  LIST SSID
@@ -132,8 +130,8 @@ void loop() {
 #define MENU_2_2_1  221   //    MANUAL
 #define MENU_2_2_2  222   //    RICK ROLL
 #define MENU_2_3    230   //  DEAUTH
-#define MENU_2_3_1  231   //    BROADCAST
-#define MENU_2_3_2  232   //    MANUAL
+#define MENU_2_3_1  231   //    MANUAL
+#define MENU_2_3_2  232   //    BROADCAST
 #define MENU_2_4    240   //  SNIFF
 #define MENU_2_4_1  241   //    ALL
 #define MENU_2_4_2  242   //    FILTER
@@ -164,7 +162,7 @@ void updateMenu(){
       display.addSubmenuElement("Settings");
       display.addSubmenuElement("Display");
       
-      display.addRows("[{\"s\":\"Show Keyboard\",\"c\":65535},{\"s\":\"Fill with numbers\",\"c\":65535}]");
+      display.addRows("[{\"s\":\"Show Keyboard\",\"c\":65535},{\"s\":\"Show numeric keyboard\",\"c\":65535},{\"s\":\"Fill with numbers\",\"c\":65535}]");
       display.fillMenuRows(cursor_row_position);
     break;
 
@@ -172,6 +170,17 @@ void updateMenu(){
     {
       keyboard.setLabel("INPUT TEXT EXAMPLE");
       String text_str = keyboard.displayKeyboard();
+      Serial.println(text_str);
+      
+      menu_level[2] = 0;    //salgo de la funcionalidad
+      updateMenu();
+    }
+    break;
+
+    case MENU_1_1_2:
+    {
+      keyboard.setLabel("INPUT NUMERIC EXAMPLE");
+      String text_str = keyboard.displayNumericKeyboard(true);
       Serial.println(text_str);
       
       menu_level[2] = 0;    //salgo de la funcionalidad
@@ -239,6 +248,51 @@ void updateMenu(){
       
       display.addRows("[{\"s\":\"Manual\",\"c\":65535},{\"s\":\"Broadcast\",\"c\":65535}]");
       display.fillMenuRows(cursor_row_position);
+    break;
+    case MENU_2_3_2:
+    {
+      String wifis = "";
+      int max_cursor_value = wifiManager.listSSIDs(&wifis);
+      display.deleteSubmenuElements();
+      display.addSubmenuElement("WiFi");
+      display.addSubmenuElement("Deauthentication");
+      display.addSubmenuElement("Broadcast");
+      display.fillMenuSubmenu();
+      
+      display.showMenuLayout();
+      display.fillMenuHeaders(menu_level[0]);
+      display.fillBSSIDs(wifis, cursor_row_position);
+      display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
+
+      bool break_loop = false;
+      int8_t target_bssid = -1;
+      while(break_loop == false){
+        //actualiza el display si se pulsa algún botón
+        if(readPad(1, max_cursor_value)){
+          //si le doy back salgo del bucle
+          if(pad[UI_LEFT] || pad[UI_B]){
+            break_loop = true;
+            menu_level[2] = 0;
+          } else if(pad[UI_A]){
+            menu_level[2] = 0;
+            target_bssid = cursor_row_position;
+            break_loop = true;
+          } else {
+            display.fillBSSIDs(wifis, cursor_row_position);
+            display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
+          }
+        }
+      }
+
+      Serial.println("DEAUTH ATTACK");
+      if(target_bssid != -1){
+        String target_bssid_str = wifiManager.getBSSIDfromJSON(&wifis, target_bssid-1);
+        Serial.println(target_bssid_str);
+        wifiManager.deauth(target_bssid_str, "FF:FF:FF:FF:FF:FF");
+      }
+      cursor_row_position = 1;
+      updateMenu();
+    }
     break;
 
 
@@ -525,6 +579,10 @@ bool readPad(uint8_t min_cursor_value, uint8_t max_cursor_value){
       cursor_row_position = 1;
       change_menu = true;
     }
+  }
+
+  if(pad[UI_A] || pad[UI_B]){
+    change_menu = true;
   }
 
   if(change_menu == true){

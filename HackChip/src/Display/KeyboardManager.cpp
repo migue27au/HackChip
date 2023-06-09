@@ -8,15 +8,29 @@ KeyboardManager::~KeyboardManager(){
 	
 }
 
+void KeyboardManager::reset(){
+	for(uint8_t row = 0; row < KEYBOARD_ROWS; row++){
+		for(uint8_t col = 0; col < KEYBOARD_COLS; col++){
+			keyboard_letters[col][row].uppercase = "";
+			keyboard_letters[col][row].lowercase = "";
+			keyboard_letters[col][row].color = TFT_WHITE;
+			keyboard_letters[col][row].key_width = 1;
+			keyboard_letters[col][row].key_height = 1;
+			keyboard_letters[col][row].key_expanded_from_x = -1;
+			keyboard_letters[col][row].key_expanded_from_y = -1;
+		}
+	}
+}
+
 void KeyboardManager::init(){
-	String rows[4] = {"1234567890'¡",
-										"qwertyuiop+[",
-										"asdfghjklñ|{",
-										"<zxcvbnm,.-@"};
-	String ROWS[4] = {"!\"·$%&/()=?¿",
-										"QWERTYUIOP*]",
-										"ASDFGHJKLÑ|}",
-										">ZXCVBNM;:_#"};
+	String rows[4] = {	"1234567890'¡",
+						"qwertyuiop+[",
+						"asdfghjklñ|{",
+						"<zxcvbnm,.-@"};
+	String ROWS[4] = {	"!\"·$%&/()=?¿",
+						"QWERTYUIOP*]",
+						"ASDFGHJKLÑ|}",
+						">ZXCVBNM;:_#"};
 	
 	for(uint8_t row = 0; row < 4; row++){
 		for(uint8_t col = 0; col < 12; col++){
@@ -138,14 +152,13 @@ void KeyboardManager::printKeyboard(){
 				}
 				int central_x = - (KEYBOARD_LETTER_LEFT_PADDING/2) + (static_cast<uint16_t>(KEYBOARD_LETTER_LEFT_PADDING)*keyboard_letters[col][row].key_width)/2;
 				int central_y = - (KEYBOARD_LETTER_TOP_PADDING/2) + (static_cast<uint16_t>(KEYBOARD_LETTER_TOP_PADDING)*keyboard_letters[col][row].key_height)/2;
-				Serial.println(x);
-				Serial.println(central_x);
 
 				display_tft->drawString(letter_to_print, x+central_x, y+central_y);
 			}
 		}
 	}	
 }
+
 
 void KeyboardManager::updateLetter(uint8_t col, uint8_t row, bool selected){
 	String letter_to_print = keyboard_letters[col][row].lowercase;
@@ -164,7 +177,7 @@ void KeyboardManager::updateLetter(uint8_t col, uint8_t row, bool selected){
 	//las teclas especiales (shift, ctrl y alt) se gestionan a parte
 	if(isSpecialLetter(col, row) == false){
 		if(selected){
-			Serial.printf("key: %d %d\r\n", col, row);
+			Serial.printf("Keyboard> key: %d %d\r\n", col, row);
 			display_tft->fillRect(x_rect, y_rect, KEYBOARD_LETTER_LEFT_PADDING*keyboard_letters[col][row].key_width, KEYBOARD_LETTER_TOP_PADDING*keyboard_letters[col][row].key_height, KEYBOARD_COLOR_BORDER);
 			color = KEYBOARD_COLOR_BACKGROUND;
 		} else {
@@ -258,6 +271,7 @@ String KeyboardManager::displayKeyboard(){
 	
 	shift_pressed = false; ctrl_pressed = false; alt_pressed = false;
 	
+	reset();
 	init();
 	
 	printKeyboard();
@@ -356,8 +370,10 @@ String KeyboardManager::displayKeyboard(){
 
 		//correciones teclas especiales ultima columna. Ocurre cuando se resta el valor de selected letter
 		if(keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_x != -1 && keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_y != -1){
-			selected_letter[0] = keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_x;
-			selected_letter[1] = keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_y;
+			uint8_t new_x_value = keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_x;
+			uint8_t new_y_value = keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_y;
+			selected_letter[0] = new_x_value;
+			selected_letter[1] = new_y_value;
 		}
 
 		if(selected_letter[0] != prev_selected_letter[0] || selected_letter[1] != prev_selected_letter[1]){
@@ -375,4 +391,209 @@ String KeyboardManager::displayKeyboard(){
 	} else {
 		return "";
 	}
+}
+
+
+String KeyboardManager::displayNumericKeyboard(bool mac_format){
+	uint8_t selected_letter[2] = {0,0};
+	keyboard_string = "";
+	
+	reset();	
+	initNumeric();
+	
+	printNumericKeyboard();
+	updateLetter(0, 0, true);
+	printTextArea();
+	
+	uint8_t max_string_length = KEYBOARD_STRING_MAX_LENGTH;
+	if(mac_format) {
+		max_string_length = 17;
+	}
+
+	bool keyboard_enable = true;
+	bool keyboard_text_finished = false;
+	while(keyboard_enable){
+		pad_checkUI();
+
+		if(pad[UI_B]){
+			//si hay texto escrito lo borras
+			if(keyboard_string.length() > 0){
+				keyboard_string = keyboard_string.substring(0,keyboard_string.length()-1);
+				
+				//si es el formato mac y la ultima letra es ":" la quitas
+				if(mac_format == true && keyboard_string.charAt(keyboard_string.length()-1) == ':'){
+					keyboard_string = keyboard_string.substring(0,keyboard_string.length()-1);	
+				}
+
+				printTextArea();
+			//si no, sales
+			} else {
+				keyboard_enable = false;
+			}
+			
+			delay(100);
+		}
+
+		if(pad[UI_A]){
+			if(selected_letter[0] < 5 && selected_letter[1] < 4 && keyboard_string.length() < max_string_length){
+			//LETTER
+				//si es el formato mac y la longitud coincide con la que corresponde a : lo pongo
+				if(mac_format == true && keyboard_string.length() > 1  && keyboard_string.length() < max_string_length && (keyboard_string.length()-2)%3 == 0){
+					keyboard_string += ":";	
+				}
+				keyboard_string += keyboard_letters[selected_letter[0]][selected_letter[1]].lowercase;
+				//si es el formato mac y la longitud coincide con la que corresponde a : lo pongo
+				if(mac_format == true && keyboard_string.length() > 1  && keyboard_string.length() < max_string_length && (keyboard_string.length()-2)%3 == 0){
+					keyboard_string += ":";	
+				}
+
+			//RETR
+			} else if(selected_letter[0] == 5 && selected_letter[1] == 0){
+				keyboard_string = keyboard_string.substring(0,keyboard_string.length()-1);
+			//QUIT
+			} else if(selected_letter[0] == 5 && selected_letter[1] == 3){
+				keyboard_enable = false;
+			//ENTER
+			} else if(selected_letter[0] == 5 && selected_letter[1] == 1){
+				keyboard_enable = false;
+				keyboard_text_finished = true;
+			}
+			//actualizo el texto
+			printTextArea();
+			delay(100);
+		}
+
+		uint8_t prev_selected_letter[2] = {selected_letter[0], selected_letter[1]};
+
+		if(pad[UI_DOWN]){
+			if(selected_letter[1] < NUMERIC_KEYBOARD_ROWS-1){
+				selected_letter[1] = prev_selected_letter[1] + keyboard_letters[prev_selected_letter[0]][prev_selected_letter[1]].key_height;
+			}	
+		}
+
+		if(pad[UI_UP]){
+			if(selected_letter[1] > 0){
+				selected_letter[1]--;
+			}
+		}
+
+		if(pad[UI_RIGHT]){
+			if(selected_letter[0] < NUMERIC_KEYBOARD_COLS-1){
+				selected_letter[0] = prev_selected_letter[0] + keyboard_letters[prev_selected_letter[0]][prev_selected_letter[1]].key_width;
+			}
+		}
+
+		if(pad[UI_LEFT]){
+			if(selected_letter[0] > 0){
+				selected_letter[0]--;
+			}
+		}
+
+		//correciones teclas especiales ultima columna. Ocurre cuando se resta el valor de selected letter
+		if(keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_x != -1 && keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_y != -1){
+			uint8_t new_x_value = keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_x;
+			uint8_t new_y_value = keyboard_letters[selected_letter[0]][selected_letter[1]].key_expanded_from_y;
+			selected_letter[0] = new_x_value;
+			selected_letter[1] = new_y_value;
+		}
+
+		if(selected_letter[0] != prev_selected_letter[0] || selected_letter[1] != prev_selected_letter[1]){
+			//desactivo la anterior
+			updateLetter(prev_selected_letter[0], prev_selected_letter[1], false);
+			//activo la nueva
+			updateLetter(selected_letter[0], selected_letter[1], true);
+			delay(100);
+		}
+	}//while
+
+	if(keyboard_text_finished){
+		return keyboard_string;
+	} else {
+		return "";
+	}
+}
+
+void KeyboardManager::printNumericKeyboard(){
+	display_tft->fillScreen(KEYBOARD_COLOR_BACKGROUND);
+	display_tft->setTextSize(2);
+	display_tft->setTextDatum(4);
+	
+	for(uint8_t row = 0; row < NUMERIC_KEYBOARD_ROWS; row++){
+		for(uint8_t col = 0; col < NUMERIC_KEYBOARD_COLS; col++){
+			//si la letra está definida
+			if(keyboard_letters[col][row].lowercase.length() > 0){
+				//si no es una letra especial cuando está activados los cambios después de mostrar por primera vez
+				String letter_to_print = String(keyboard_letters[col][row].lowercase);
+				if(shift_pressed){
+					letter_to_print = String(keyboard_letters[col][row].uppercase);
+				}
+				unsigned int x = KEYBOARD_LETTER_LEFT_PADDING*col + KEYBOARD_LEFT_PADDING;
+				unsigned int y = KEYBOARD_LETTER_TOP_PADDING*row + KEYBOARD_TOP_PADDING;
+				unsigned int x_rect = x - (int)KEYBOARD_LETTER_LEFT_PADDING/2;
+				unsigned int y_rect = y - (int)KEYBOARD_LETTER_TOP_PADDING/2;
+
+				if(isSpecialLetter(col,row)){
+					display_tft->fillRect(x_rect, y_rect, KEYBOARD_LETTER_LEFT_PADDING*keyboard_letters[col][row].key_width, KEYBOARD_LETTER_TOP_PADDING*keyboard_letters[col][row].key_height, KEYBOARD_COLOR_BORDER);
+					display_tft->setTextColor(KEYBOARD_COLOR_BACKGROUND);
+				} else {
+					display_tft->drawRect(x_rect, y_rect, KEYBOARD_LETTER_LEFT_PADDING*keyboard_letters[col][row].key_width, KEYBOARD_LETTER_TOP_PADDING*keyboard_letters[col][row].key_height, keyboard_letters[col][row].color);
+					display_tft->setTextColor(keyboard_letters[col][row].color);
+				}
+				int central_x = - (KEYBOARD_LETTER_LEFT_PADDING/2) + (static_cast<uint16_t>(KEYBOARD_LETTER_LEFT_PADDING)*keyboard_letters[col][row].key_width)/2;
+				int central_y = - (KEYBOARD_LETTER_TOP_PADDING/2) + (static_cast<uint16_t>(KEYBOARD_LETTER_TOP_PADDING)*keyboard_letters[col][row].key_height)/2;
+
+				display_tft->drawString(letter_to_print, x+central_x, y+central_y);
+			}
+		}
+	}	
+}
+
+void KeyboardManager::initNumeric(){
+	String rows[4] = {	"AB789",
+						"CD456",
+						"EF123",
+						":.,0"};
+	
+	for(uint8_t row = 0; row < 4; row++){
+		for(uint8_t col = 0; col < rows[row].length(); col++){
+			keyboard_letters[col][row].lowercase = String(rows[row].charAt(col));
+			keyboard_letters[col][row].uppercase = String(rows[row].charAt(col));
+			
+			
+			if(keyboard_letters[col][row].lowercase == "0"){
+				keyboard_letters[col][row].key_width = 2;
+			} else {
+				keyboard_letters[col][row].key_width = 1;
+			}
+
+			keyboard_letters[col][row].key_height = 1;
+		}
+	}
+
+	//0 el cero ocupa dos espacios
+	keyboard_letters[4][3].key_expanded_from_x = 3;
+	keyboard_letters[4][3].key_expanded_from_y = 3;
+	
+	//RETR
+	keyboard_letters[5][0].lowercase = "<-";
+	keyboard_letters[5][0].uppercase = "<-";
+	keyboard_letters[5][0].key_width = 3;
+	keyboard_letters[5][0].key_height = 1;
+
+	//ENTR
+	keyboard_letters[5][1].lowercase = "ENT";
+	keyboard_letters[5][1].uppercase = "ENT";
+	keyboard_letters[5][1].key_width = 3;
+	keyboard_letters[5][1].key_height = 2;
+	for(uint8_t i = 0; i < keyboard_letters[5][1].key_height; i++){
+		keyboard_letters[5][1+i].key_expanded_from_x = 5;
+		keyboard_letters[5][1+i].key_expanded_from_y = 1;
+	}
+
+	//QUIT
+	keyboard_letters[5][3].lowercase = "QUIT";
+	keyboard_letters[5][3].uppercase = "QUIT";
+	keyboard_letters[5][3].key_width = 3;
+	keyboard_letters[5][3].key_height = 1;
+	keyboard_letters[5][3].color = TFT_RED;
 }

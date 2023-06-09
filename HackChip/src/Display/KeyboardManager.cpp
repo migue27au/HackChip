@@ -124,7 +124,6 @@ void KeyboardManager::printKeyboard(){
 				if(shift_pressed){
 					letter_to_print = String(keyboard_letters[col][row].uppercase);
 				}
-	
 				unsigned int x = KEYBOARD_LETTER_LEFT_PADDING*col + KEYBOARD_LEFT_PADDING;
 				unsigned int y = KEYBOARD_LETTER_TOP_PADDING*row + KEYBOARD_TOP_PADDING;
 				unsigned int x_rect = x - (int)KEYBOARD_LETTER_LEFT_PADDING/2;

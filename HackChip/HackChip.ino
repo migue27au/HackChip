@@ -5,45 +5,6 @@
 
 bool readPad(uint8_t min_cursor_value = 0, uint8_t max_cursor_value = 0);
 
-int cursor_position = 0;
-unsigned int max_cursor_position = 8;
-
-unsigned short menu_hierarchy_selector = 0;  //indica la profundidad de los menús 0 MAIN> 1 WIFI> 2 etc. Usado para el índice de la variable inferior
-short menu_selector[3] = {-1, -1, -1}; //no hay menu seleccionado
-
-unsigned int menu_wifi_size = 5;
-String main_menu = "["
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"DISPLAY\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"WIFI 802.11n\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"SETTINGS\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"NFC\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"USB\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"TEST3\"" + "},{\"c\":\""+String(TFT_GREEN)+  "\",\"s\":" + "\"TEST3\"" + "},{\"c\":\""+String(TFT_MAGENTA)+  "\",\"s\":" + "\"TEST3\"" + "}]}" +
-  "]";
-String menu_wifi = "["
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"LIST SSID\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"BEACON FLOOD\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"BEACON RICK-ROLL FLOOD\"" + "}]}," + 
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"SNIFF TRAFFIC\"" + "}]}," + 
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"CONNECT WIFI\"" + "}]}," + 
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"DEAUTH\"" + "}]}" +
-  "]";
-
-String menu_nfc = "["
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"READ TAG\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"TEST\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"TEST\"" + "}]}" + 
-  "]";
-  
-String menu_usb = "["
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"BADUSB\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"TEST\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"TEST\"" + "}]}" + 
-  "]";
-String menu_display = "["
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"SHOW KEYBOARD\"" + "}]}," +
-  "{\"r\":[{\"c\":\""+String(TFT_WHITE)+  "\",\"s\":" + "\"TEST COLORS\"" + "}]}" +
-  "]";
 
 TFT_eSPI my_display_tft= TFT_eSPI();
 DisplayManager display = DisplayManager(&my_display_tft);
@@ -95,10 +56,7 @@ void setup() {
   }
   
   Serial.println("Setup done");
-  Serial.println("Display> Hello");
   
-  display.clear();
-  display.hello();
   Serial.println("Display> Add headers");
   display.addHeaders("[{\"s\":\"Settings\",\"c\":65535},{\"s\":\"WiFi\",\"c\":65535},{\"s\":\"NFC\",\"c\":65535},{\"s\":\"USB\",\"c\":65535},{\"s\":\"RF\",\"c\":65535}]");
   delay(5000);     
@@ -123,6 +81,7 @@ void loop() {
 #define MENU_1_1_1  111   //    SHOW KEYBOARD
 #define MENU_1_1_2  112   //    SHOW NUMERIC KEYBOARD
 #define MENU_1_1_3  113   //    FILL NUMBERS
+#define MENU_1_1_4  114   //    SHOW ATTACK MESSAGE
 
 #define MENU_2      200   //WIFI
 #define MENU_2_1    210   //  LIST SSID
@@ -144,192 +103,254 @@ void loop() {
 
 void updateMenu(){
   display.clear();
-  switch(menu_level[0]*100+menu_level[1]*10+menu_level[2]){
-    case MENU_0:
-      display.deleteSubmenuElements();
+  if(menu_level[0]*100+menu_level[1]*10+menu_level[2] == MENU_0){
+    display.hello();
+  } else {
+    switch(menu_level[0]*100+menu_level[1]*10+menu_level[2]){
+      case MENU_0:
       
-    break;
-    
-    case MENU_1:  //SETTINGS
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("Settings");
-      display.addRows("[{\"s\":\"Display\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-
-    case MENU_1_1:
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("Settings");
-      display.addSubmenuElement("Display");
-      
-      display.addRows("[{\"s\":\"Show Keyboard\",\"c\":65535},{\"s\":\"Show numeric keyboard\",\"c\":65535},{\"s\":\"Fill with numbers\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-
-    case MENU_1_1_1:
-    {
-      keyboard.setLabel("INPUT TEXT EXAMPLE");
-      String text_str = keyboard.displayKeyboard();
-      Serial.println(text_str);
-      
-      menu_level[2] = 0;    //salgo de la funcionalidad
-      updateMenu();
-    }
-    break;
-
-    case MENU_1_1_2:
-    {
-      keyboard.setLabel("INPUT NUMERIC EXAMPLE");
-      String text_str = keyboard.displayNumericKeyboard(true);
-      Serial.println(text_str);
-      
-      menu_level[2] = 0;    //salgo de la funcionalidad
-      updateMenu();
-    }
-    break;
-
-    case MENU_2:  //WIFI
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("WiFi");
-      
-      display.addRows("[{\"s\":\"List SSID\",\"c\":65535},{\"s\":\"Beacon Flood\",\"c\":65535},{\"s\":\"Deauthentication\",\"c\":65535},{\"s\":\"Sniffer\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-    
-    case MENU_2_1:
-    {
-      String wifis = "";
-      int max_cursor_value = wifiManager.listSSIDs(&wifis);
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("WiFi");
-      display.addSubmenuElement("List SSIDs");
-      display.fillMenuSubmenu();
-      
-      display.showMenuLayout();
-      display.fillMenuHeaders(menu_level[0]);
-      display.fillSSIDs(wifis, cursor_row_position);
-      display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
-      
-      while(menu_level[1] != 0){
-        //actualiza el display si se pulsa algún botón
-        if(readPad(1, max_cursor_value)){
-          display.fillSSIDs(wifis, cursor_row_position);
-          display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
-        }
+      case MENU_1:  //SETTINGS
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("Settings");
+        display.addRows("[{\"s\":\"Display\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
+  
+      case MENU_1_1:
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("Settings");
+        display.addSubmenuElement("Display");
+        
+        display.addRows("[{\"s\":\"Show Keyboard\",\"c\":65535},{\"s\":\"Show numeric keyboard\",\"c\":65535},{\"s\":\"Fill with numbers\",\"c\":65535},{\"s\":\"Show Attack Message\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
+  
+      case MENU_1_1_1:
+      {
+        keyboard.setLabel("INPUT TEXT EXAMPLE");
+        String text_str = keyboard.displayKeyboard();
+        Serial.println(text_str);
+        
+        menu_level[2] = 0;    //salgo de la funcionalidad
+        updateMenu();
       }
-    }
-    break;
-    case MENU_2_2:
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("WiFi");
-      display.addSubmenuElement("Beacon Flood");
-      
-      display.addRows("[{\"s\":\"Manual\",\"c\":65535},{\"s\":\"Rick Roll\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-
-    //beacon_flood_manual
-    case MENU_2_2_1:
-    {
-      String ssid_str = keyboard.displayKeyboard();
-      if(ssid_str.length() > 0){
-        wifiManager.beaconFlood(ssid_str);
+      break;
+  
+      case MENU_1_1_2:
+      {
+        keyboard.setLabel("INPUT NUMERIC EXAMPLE");
+        String text_str = keyboard.displayNumericKeyboard(true);
+        Serial.println(text_str);
+        
+        menu_level[2] = 0;    //salgo de la funcionalidad
+        updateMenu();
       }
-
-      menu_level[2] = 0;    //salgo de la funcionalidad
-      updateMenu();
-    }
-    break;
-    
-    case MENU_2_3:
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("WiFi");
-      display.addSubmenuElement("Deauthentication");
+      break;
+  
+      case MENU_1_1_4:
+      {
+        display.addSubmenuElement("Settings");
+        display.addSubmenuElement("Display");
+        display.addSubmenuElement("Show Attack Message");
+        
+        display.showMenuLayout();
+        display.fillMenuHeaders(menu_level[0]);
+        display.fillMenuSubmenu();
+        
+        display.showAttackMessage("Attacking", "description of attack");
+        delay(5000);
       
-      display.addRows("[{\"s\":\"Manual\",\"c\":65535},{\"s\":\"Broadcast\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-    case MENU_2_3_2:
-    {
-      String wifis = "";
-      int max_cursor_value = wifiManager.listSSIDs(&wifis);
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("WiFi");
-      display.addSubmenuElement("Deauthentication");
-      display.addSubmenuElement("Broadcast");
-      display.fillMenuSubmenu();
+        menu_level[2] = 0;
+        updateMenu();
+      }
+      break;
+  
+      case MENU_2:  //WIFI
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("WiFi");
+        
+        display.addRows("[{\"s\":\"List SSID\",\"c\":65535},{\"s\":\"Beacon Flood\",\"c\":65535},{\"s\":\"Deauthentication\",\"c\":65535},{\"s\":\"Sniffer\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
       
-      display.showMenuLayout();
-      display.fillMenuHeaders(menu_level[0]);
-      display.fillBSSIDs(wifis, cursor_row_position);
-      display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
-
-      bool break_loop = false;
-      int8_t target_bssid = -1;
-      while(break_loop == false){
-        //actualiza el display si se pulsa algún botón
-        if(readPad(1, max_cursor_value)){
-          //si le doy back salgo del bucle
-          if(pad[UI_LEFT] || pad[UI_B]){
-            break_loop = true;
-            menu_level[2] = 0;
-          } else if(pad[UI_A]){
-            menu_level[2] = 0;
-            target_bssid = cursor_row_position;
-            break_loop = true;
-          } else {
-            display.fillBSSIDs(wifis, cursor_row_position);
+      case MENU_2_1:
+      {
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("WiFi");
+        display.addSubmenuElement("List SSIDs");
+        
+        display.showMenuLayout();
+        display.fillMenuHeaders(menu_level[0]);
+        display.fillMenuSubmenu();
+        
+        display.showAttackMessage("List SSID", "Listing SSID & RSSID");
+        
+        String wifis = "";
+        int max_cursor_value = wifiManager.listSSIDs(&wifis);
+        display.fillSSIDs(wifis, cursor_row_position);
+        display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
+        
+        while(menu_level[1] != 0){
+          //actualiza el display si se pulsa algún botón
+          if(readPad(1, max_cursor_value)){
+            display.fillSSIDs(wifis, cursor_row_position);
             display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
           }
         }
       }
-
-      Serial.println("DEAUTH ATTACK");
-      if(target_bssid != -1){
-        String target_bssid_str = wifiManager.getBSSIDfromJSON(&wifis, target_bssid-1);
-        Serial.println(target_bssid_str);
-        wifiManager.deauth(target_bssid_str, "FF:FF:FF:FF:FF:FF");
-      }
-      cursor_row_position = 1;
-      updateMenu();
-    }
-    break;
-
-
-    case MENU_3:  //NFC
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("NFC");
-      
-      display.addRows("[{\"s\":\"Read TAG\",\"c\":65535},{\"s\":\"Write TAG\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-
-    case MENU_4:  //USB
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("USB");
-      
-      display.addRows("[{\"s\":\"BadUSB\",\"c\":65535},{\"s\":\"Simule Keyboard\",\"c\":65535},{\"s\":\"Simule Mouse\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-
-    case MENU_5:  //RF
-      display.deleteSubmenuElements();
-      display.addSubmenuElement("RF");
-      
-      display.addRows("[{\"s\":\"Receive 433MHz\",\"c\":65535},{\"s\":\"Send 433 MHz\",\"c\":65535}]");
-      display.fillMenuRows(cursor_row_position);
-    break;
-    
-    default:
-      
-    break;
-  }
+      break;
+      case MENU_2_2:
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("WiFi");
+        display.addSubmenuElement("Beacon Flood");
+        
+        display.addRows("[{\"s\":\"Manual\",\"c\":65535},{\"s\":\"Rick Roll\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
   
-  display.showMenuLayout();
-  display.fillMenuHeaders(menu_level[0]);
-  display.fillMenuSubmenu();
-  display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
-  Serial.println("Menu updated");
+      //beacon_flood_manual
+      case MENU_2_2_1:
+      {
+        keyboard.setLabel("Set SSID to fake");
+        String ssid_str = keyboard.displayKeyboard();
+        if(ssid_str.length() > 0){
+          display.addSubmenuElement("WiFi");
+          display.addSubmenuElement("Beacon Flood");
+          display.addSubmenuElement("Manual");
+          
+          display.showMenuLayout();
+          display.fillMenuHeaders(menu_level[0]);
+          display.fillMenuSubmenu();
+          
+          display.showAttackMessage("Beacon Flood", "Faking SSID: " + ssid_str);
+          
+          wifiManager.beaconFlood(ssid_str);
+        }
+  
+  
+        menu_level[2] = 0;    //salgo de la funcionalidad
+        updateMenu();
+      }
+      break;
+  
+      //beacon_flood rick roll
+      case MENU_2_2_2:
+      {
+        display.addSubmenuElement("WiFi");
+        display.addSubmenuElement("Beacon Flood");
+        display.addSubmenuElement("RickRoll");
+        
+        display.showMenuLayout();
+        display.fillMenuHeaders(menu_level[0]);
+        display.fillMenuSubmenu();
+        
+        display.showAttackMessage("Beacon Flood", "Rick Roll");
+        
+        wifiManager.beaconFloodRickRoll();
+  
+  
+        menu_level[2] = 0;    //salgo de la funcionalidad
+        updateMenu();
+      }
+      break;
+      
+      case MENU_2_3:
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("WiFi");
+        display.addSubmenuElement("Deauthentication");
+        
+        display.addRows("[{\"s\":\"Manual\",\"c\":65535},{\"s\":\"Broadcast\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
+      case MENU_2_3_2:
+      {
+        
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("WiFi");
+        display.addSubmenuElement("Deauthentication");
+        display.addSubmenuElement("Broadcast");
+        display.fillMenuSubmenu();
+        
+        display.showMenuLayout();
+        display.fillMenuHeaders(menu_level[0]);
+        display.showAttackMessage("List BSSID", "Select the AP you want to deauth from");
+        
+        String wifis = "";
+        int max_cursor_value = wifiManager.listSSIDs(&wifis);
+        display.fillBSSIDs(wifis, cursor_row_position);
+        display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
+  
+        bool break_loop = false;
+        int8_t target_bssid = -1;
+        while(break_loop == false){
+          //actualiza el display si se pulsa algún botón
+          if(readPad(1, max_cursor_value)){
+            //si le doy back salgo del bucle
+            if(pad[UI_LEFT] || pad[UI_B]){
+              break_loop = true;
+              menu_level[2] = 0;
+            } else if(pad[UI_A]){
+              menu_level[2] = 0;
+              target_bssid = cursor_row_position;
+              break_loop = true;
+            } else {
+              display.fillBSSIDs(wifis, cursor_row_position);
+              display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
+            }
+          }
+        }
+  
+        Serial.println("DEAUTH ATTACK");
+        if(target_bssid != -1){
+          String target_bssid_str = wifiManager.getBSSIDfromJSON(&wifis, target_bssid-1);
+          Serial.println(target_bssid_str);
+          display.showMenuLayout();
+          display.fillMenuHeaders(menu_level[0]);
+          display.fillMenuSubmenu();
+          
+          display.showAttackMessage("Deauth attack", "BSSID: " + target_bssid_str + " (broadcast)");
+          wifiManager.deauth(target_bssid_str, "FF:FF:FF:FF:FF:FF");
+        }
+        cursor_row_position = 1;
+        updateMenu();
+      }
+      break;
+  
+  
+      case MENU_3:  //NFC
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("NFC");
+        
+        display.addRows("[{\"s\":\"Read TAG\",\"c\":65535},{\"s\":\"Write TAG\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
+  
+      case MENU_4:  //USB
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("USB");
+        
+        display.addRows("[{\"s\":\"BadUSB\",\"c\":65535},{\"s\":\"Simule Keyboard\",\"c\":65535},{\"s\":\"Simule Mouse\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
+  
+      case MENU_5:  //RF
+        display.deleteSubmenuElements();
+        display.addSubmenuElement("RF");
+        
+        display.addRows("[{\"s\":\"Receive 433MHz\",\"c\":65535},{\"s\":\"Send 433 MHz\",\"c\":65535}]");
+        display.fillMenuRows(cursor_row_position);
+      break;
+      
+      default:
+        
+      break;
+    }
+    display.showMenuLayout();
+    display.fillMenuHeaders(menu_level[0]);
+    display.fillMenuSubmenu();
+    display.showSelectors(menu_level[0], cursor_row_position, menu_level[2]);
+    Serial.println("Menu updated");
+  }
 }
 
 /*

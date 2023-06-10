@@ -6,6 +6,8 @@
 #include "TFT_eSPI.h"
 #include <ArduinoJson.h>
 
+#include "avatar.h"
+
 #define PIXELS_HORIZONTAL 320
 #define PIXELS_VERTICAL 170
 
@@ -104,6 +106,8 @@ public:
 	void hello();
 	void fillSSIDs(String json_str, uint8_t row_selector = 0);
 	void fillBSSIDs(String json_str, uint8_t row_selector = 0);
+
+	void showAttackMessage(String title, String description = "");
 private:
 	TFT_eSPI *display_tft;
 

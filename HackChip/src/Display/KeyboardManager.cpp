@@ -385,7 +385,7 @@ String KeyboardManager::displayKeyboard(){
 		}
 	
 	}//while
-
+	display_tft->fillScreen(TFT_BLACK);
 	if(keyboard_text_finished){
 		return keyboard_string;
 	} else {
@@ -506,6 +506,7 @@ String KeyboardManager::displayNumericKeyboard(bool mac_format){
 		}
 	}//while
 
+	display_tft->fillScreen(TFT_BLACK);
 	if(keyboard_text_finished){
 		return keyboard_string;
 	} else {

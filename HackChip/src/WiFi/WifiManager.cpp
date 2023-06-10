@@ -208,8 +208,37 @@ void WifiManager::beaconFlood(String target_ssid, unsigned int time_of_attack) {
 	while(millis() < start_attack_time+time_of_attack){
 		String new_ssid = target_ssid + " " + (char)random(48,90);
     
-		//randomMacAddr(mac);
+		randomMacAddr(mac);
 		sender.beacon_bypassed(mac, new_ssid.c_str(), _ap_channel, false);	
+		delay(10);	//delay de 10ms entre peticiones
+	}
+}
+
+void WifiManager::beaconFloodRickRoll(unsigned int time_of_attack) {
+	//punto de acceso hidden
+  createAP(DEFAULT_AP_SSID, DEFAULT_AP_SSID_PASS, DEFAULT_AP_CHANNEL, true, DEFAULT_AP_MAX_CONNECTIONS);
+  
+  String rickroll[] = {
+  	"Never gonna give you up",
+		"Never gonna let you down",
+		"Never gonna run around and desert you",
+		"Never gonna make you cry",
+		"Never gonna say goodbye",
+		"Never gonna tell a lie and hurt you"
+  };
+
+  unsigned long start_attack_time = millis();
+	
+	PacketSender sender;
+
+	MacAddr mac = {1,2,3,4,5,6};
+	uint8_t index = 0;
+	while(millis() < start_attack_time+time_of_attack){
+		randomMacAddr(mac);
+		sender.beacon_bypassed(mac, rickroll[index].c_str(), _ap_channel, false);	
+
+		index = (index+1)%6;
+		
 		delay(10);	//delay de 10ms entre peticiones
 	}
 }

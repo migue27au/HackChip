@@ -82,6 +82,7 @@ public:
 
 	//Beacon Spam Attack
 	void beaconFlood(String target_ssid, unsigned int time_of_attack = DEFAULT_TIME_OF_ATTACK);
+	void beaconFloodRickRoll(unsigned int time_of_attack = DEFAULT_TIME_OF_ATTACK);
 
     //deauth attack
     void deauth(String ap_mac, String sta_mac, unsigned int time_of_attack = DEFAULT_TIME_OF_ATTACK);

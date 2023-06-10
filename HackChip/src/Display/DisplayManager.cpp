@@ -247,7 +247,7 @@ void DisplayManager::fillSSIDs(String json_str, uint8_t row_selector){
 			
 			display_tft->setTextColor(color_to_display);
 			display_tft->drawString(string_to_display, 
-									col_offset[col],
+									col_offset[col-1],
 									ROW_ELEMENT_Y_OFFSET + static_cast<uint16_t>(LETTER_HEIGHT)*(row%(ROW_CELLS_SHOWED/cursor_size)));
 		}
 	}
@@ -296,6 +296,8 @@ void DisplayManager::fillBSSIDs(String json_str, uint8_t row_selector){
 }
 
 void DisplayManager::hello(){
+	display_tft->fillScreen(COLOR_BACKGROUND);
+
 	String s = "HackChip!";
 	int colors[9] = {	TFT_RED,
 						TFT_ORANGE,
@@ -307,13 +309,47 @@ void DisplayManager::hello(){
 						TFT_VIOLET,
 						TFT_MAGENTA
 					};
+	display_tft->pushImage(1,1,170,170,logo);
+
 	display_tft->setTextDatum(4);
-	uint8_t text_size = 4;
+	uint8_t text_size = 3;	
 	display_tft->setTextSize(text_size);
+
 	for(uint8_t c = 0; c < s.length(); c++){
 		display_tft->setTextColor(colors[c]);
 		display_tft->drawString(String(s.charAt(c)),
-								((PIXELS_HORIZONTAL/2)-((s.length()/2)*text_size*LETTER_WIDTH))+(c*text_size*LETTER_WIDTH),
-								((PIXELS_VERTICAL/2)-((LETTER_HEIGHT/2)*text_size)));
+								((PIXELS_HORIZONTAL*3/4)-((s.length()/2)*text_size*LETTER_WIDTH))+(c*text_size*LETTER_WIDTH),
+								PIXELS_VERTICAL/4);
 	}
+
+	display_tft->setTextSize(2);
+	display_tft->setTextColor(TFT_WHITE);
+	display_tft->drawString("Press ->",
+								PIXELS_HORIZONTAL*3/4,
+								PIXELS_VERTICAL*3/4);
+	display_tft->drawString("to begin",
+								PIXELS_HORIZONTAL*3/4,
+								PIXELS_VERTICAL*3/4 + (LETTER_HEIGHT*3));
+}
+
+void DisplayManager::showAttackMessage(String title, String description){
+	//clear
+	display_tft->fillRect(ROW_ELEMENT_X, ROW_ELEMENT_Y_OFFSET-(LETTER_HEIGHT/2), PIXELS_HORIZONTAL-ROW_ELEMENT_X,PIXELS_VERTICAL-ROW_ELEMENT_Y_OFFSET, COLOR_BACKGROUND);
+
+	display_tft->setTextSize(3);
+	display_tft->setTextDatum(4);
+	display_tft->setTextColor(TFT_RED);
+
+	display_tft->drawString(title, 
+							PIXELS_HORIZONTAL/2,
+							PIXELS_VERTICAL/2);
+
+
+	display_tft->setTextSize(1);
+	display_tft->setTextDatum(3);
+	display_tft->setTextColor(TFT_WHITE);
+
+	display_tft->drawString(description, 
+							ROW_ELEMENT_X,
+							PIXELS_VERTICAL/2 + ROW_ELEMENT_Y_OFFSET);
 }

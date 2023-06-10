@@ -146,10 +146,11 @@ esp_err_t PacketSender::raw(const uint8_t* packet, int32_t len, bool en_sys_seq,
 void wsl_bypasser_send_raw_frame(const uint8_t *frame_buffer, int32_t size){
     for(unsigned int i = 0; i < size; i++){
         if(frame_buffer[i] < 16){
-        Serial.print("0");
+            Serial.print("0");
         }
         Serial.print(frame_buffer[i], HEX);
     }
+    Serial.println();
     ESP_ERROR_CHECK(esp_wifi_80211_tx(WIFI_IF_AP, frame_buffer, size, false));
 }
 
